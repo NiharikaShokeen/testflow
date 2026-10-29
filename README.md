@@ -1,33 +1,21 @@
 # TestFlow
 
-TestFlow is a single-user workspace for recording website QA findings and preparing testing reports. It was developed from a manual QA workflow: reproduce an issue in the website, record the steps and observed result, track the finding, and export the selected review.
+A QA findings and reporting application built with React, TypeScript, Vinext and Cloudflare D1. Test a website manually, record reproducible issues, organise separate reviews, and export selected findings to editable Word reports or PDF summaries.
 
 ## Features
 
-- Separate review reports with testing dates, platform, scope and tester details.
-- Findings with reproduction steps, expected and observed results, severity, status and evidence references.
-- Responsive finding saves, background synchronisation, and local draft recovery after a temporary save failure.
-- Selective exports: omit a finding without deleting its record.
-- Editable Word reports, using a template derived from the supplied reference report; PDF summary export is also available.
-- Inline bold selection and optional numbering of reproduction steps in Word.
+- Separate review reports, finding status, severity and evidence references.
+- Responsive finding saves with background synchronisation and recoverable local drafts.
+- Selected exports, reference-derived Word formatting and optional bold emphasis.
 - Report trash and restore.
-- An optional API demo runner with HTTP status and response-field assertions.
+- Separate anonymous browser workspaces for public visitors.
+- Optional API demo with status-code and response-field assertions.
 
-## Technology
+The app does not automatically browse websites or discover UI bugs. The API demo is restricted to approved public demo services and is not connected to an authenticated internship backend.
 
-| Layer       | Implementation                                            |
-| ----------- | --------------------------------------------------------- |
-| Interface   | React, TypeScript, CSS and Tailwind CSS                   |
-| Server      | Vinext server routes on Cloudflare Workers                |
-| Persistence | Cloudflare D1 / SQLite, via Drizzle and parameterised SQL |
-| Word export | Reference-based OOXML template, packaged using fflate     |
-| PDF summary | pdf-lib                                                   |
+## Local setup
 
-The application stores its workspace in a SQLite row as structured JSON. Findings have an atomic update endpoint so editing a finding does not require uploading the full workspace. This prototype has not been normalised into separate relational tables for every entity.
-
-## Run locally
-
-Requires Node.js 22.13 or newer and npm.
+Requires Node.js 22.13 or newer.
 
 ```bash
 npm ci
@@ -37,69 +25,54 @@ npm run db:migrate:local
 npm start
 ```
 
-Open the Local URL printed by the server, normally `http://127.0.0.1:8787`.
+Open the local URL printed by the server. Use `npm run dev` for development. Local state is stored under ignored `.wrangler/`; it is separate from the deployed database.
 
-`npm run db:migrate:local` applies local SQLite migrations and remembers which have been applied. The local database lives in the ignored `.wrangler/` directory. It is separate from the deployed database, and the source archive contains no saved findings or reports.
+## Public deployment
 
-For development with hot reload, use `npm run dev` after the database setup. To change the schema, edit `db/schema.ts`, run `npm run db:generate`, rebuild and apply the new migration.
+The standalone project targets Cloudflare Workers and can use a workers.dev address or a configured custom domain. It has no provider-specific sign-in requirement.
 
-## Main workflow
+1. Authenticate your hosting account with `npx wrangler login`.
+2. Create a database: `npx wrangler d1 create testflow-data`.
+3. Replace the placeholder database ID in `wrangler.jsonc` with the returned ID.
+4. Apply the schema: `npm run db:migrate:remote`.
+5. Deploy: `npm run deploy`.
+6. Verify the returned URL and a new visitor's report workflow.
 
-1. Create a new report and enter its testing date and review details.
-2. Test the website manually in your browser.
-3. Log each finding with clear reproduction steps and observed/expected results.
-4. Update finding status as it is investigated and retested.
-5. Open Reports, choose which findings to include and download Word.
-6. Insert screenshots into the exported Word file if needed.
+The repository alone is not a live deployment. It contains no hosting credentials, saved reports or remote database contents. The earlier private hosted copy is a separate deployment and is not modified by deploying this standalone edition.
 
-Word export preserves entered text and selected emphasis. It does not rewrite findings, upload evidence images or reserve space for photos. The PDF summary uses a separate layout. A filename or URL in Evidence is a reference, not an uploaded attachment.
+## Public visitor model
 
-## Project structure
+The Worker creates an unpredictable browser session cookie and overwrites the trusted workspace header supplied to server routes. Each visitor's data is stored in its own D1 workspace row. API responses are not cached. Mutating requests are bounded and checked for cross-site origins.
 
-```text
-app/page.tsx                 Main workspace interface
-app/globals.css              Application styles
-app/api/findings/route.ts    Atomic finding saves
-app/api/workspace/route.ts   Workspace load/save
-app/api/report/route.ts      Word/PDF export
-app/api/run/route.ts         Optional API execution
-components/finding-text.tsx  Finding editor and bold selection
-lib/report-sessions.ts      Report scoping and export selection
-lib/word-report.ts           Word generation
-lib/zuka-template.ts         Sanitised template and style patterns
-lib/qa-report.ts             PDF summary generation
-db/                         SQLite schema and Drizzle setup
-drizzle/                    Schema migrations
-scripts/                    Local runtime and hosting helpers
-```
+This is anonymous guest separation, not verified account authentication. A different browser/device gets another workspace; a shared browser profile shares its cookie. Export before clearing cookies. Password login, cross-device account recovery, attachment uploads and full team access controls are not implemented.
 
-The template module contains formatting from the reference document, with original report text and image files removed. Supporting runtime files originate from the Sites/Vinext starter. The unused starter UI examples have been removed from this source handoff.
+## Important files
 
-## API routes
+| File | Role |
+| --- | --- |
+| app/page.tsx | Screens, form state, pending-save queue and downloads |
+| worker/index.ts | Guest cookie, trusted context and request boundaries |
+| lib/visitor-workspace.ts | Current visitor's database key |
+| app/api/findings/route.ts | Atomic single-finding save |
+| app/api/workspace/route.ts | Broader workspace load/save |
+| app/api/report/route.ts | Visitor- and report-scoped export |
+| lib/report-sessions.ts | Report selection, exclusions and trash |
+| lib/word-report.ts | Reference-template Word generation |
+| lib/zuka-template.ts | Sanitised formatting assets without original prose/images |
+| lib/qa-report.ts | Separate PDF summary generation |
+| db and drizzle | SQLite schema and migrations |
+| wrangler.jsonc | Worker and D1 configuration |
 
-| Route                                   | Purpose                                                      |
-| --------------------------------------- | ------------------------------------------------------------ |
-| `GET /api/workspace`                    | Load the saved workspace                                     |
-| `PUT /api/workspace`                    | Save report metadata, selections and other workspace changes |
-| `PATCH /api/findings`                   | Create/update a finding atomically; retries use the same ID  |
-| `GET /api/report?report=ID&format=docx` | Export selected findings from one active report              |
-| `GET /api/report?report=ID&format=pdf`  | Export a PDF summary; `api=1` adds its API results           |
-| `POST /api/run`                         | Execute an approved demo API request                         |
+[Read the complete project and viva guide](docs/PROJECT_GUIDE.md).
 
-## Scope and limitations
+## Report output and limits
 
-- Manual website testing is the main workflow. TestFlow does not browse a website, click buttons or discover UI bugs automatically.
-- The API runner permits HTTPS endpoints on `jsonplaceholder.typicode.com`, `httpbin.org` and `dummyjson.com`. It is not connected to an authenticated Zuka backend.
-- API requests have a 10-second timeout, disabled redirects and a 100 KB response-preview limit. Assertions check the expected status and an optional JSON field.
-- The app is a single-user prototype. Its current deployed version relies on the hosting platform's owner-only access gate; there is no separate application login or authorisation layer. Do not expose the same shared workspace publicly as a multi-user app.
-- Workspace backups can be exported; backup import is not implemented.
-- Local unsynchronised drafts depend on browser storage. Check for All changes saved before exporting or changing devices.
-- Testing dates describe the review. Application entry and trash dates reflect actual app actions. Historical testing records must come from their original source documents.
+Word preserves entered text and selected emphasis. It uses the reference report's typography and contains no photo placeholders; screenshots can be added in Word or Pages. PDF is a separate summary layout. Evidence references do not upload files.
 
-## Hosting
+The workspace table stores each visitor's reports, findings, cases and runs as a JSON payload. Focused finding saves are atomic; broader workspace replacements do not have complete revision conflict handling across tabs. The optional API runner permits HTTPS requests to jsonplaceholder.typicode.com, httpbin.org and dummyjson.com, with a 10-second timeout and capped response preview. Backup export is available; import is not implemented.
 
-The existing hosted app runs on Sites / Cloudflare Workers. This GitHub handoff removes its live Site project ID; publishing this copy does not update that existing app automatically. Local development does not require a Sites project ID. A new deployment needs its own hosting identity, D1 binding, migrations and access configuration.
+Testing dates, app entry dates and trash dates describe different events. Record historical testing from genuine source documents; the app does not create a historical usage trail.
 
-## Validation
+## Technologies
 
-The delivered application was checked with TypeScript, a production build, local endpoint tests, report isolation and trash/restore checks, simulated slow/failing saves, responsive layout checks, and visual inspection of the Word export. These are completed checks, not a claim that this source contains a comprehensive automated test suite.
+React, TypeScript, Vinext/Vite, Cloudflare Workers, Cloudflare D1/SQLite, Drizzle ORM, fflate, pdf-lib and Lucide icons. Third-party packages retain their respective licences. No language-model API is used to write exported findings.

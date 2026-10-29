@@ -77,7 +77,7 @@ type ReportMeta = {
 const defaultReport: ReportMeta = {
   project: "Website review",
   website: "",
-  tester: "Niharika",
+  tester: "",
   environment: "",
   scope: "",
   documentTitle: "Website Testing Report",
@@ -420,9 +420,9 @@ export default function Home() {
           testflow<span className="branddot">.</span>
         </a>
         <div className="workspace">
-          <span className="workspaceicon">N</span>
+          <span className="workspaceicon">T</span>
           <div>
-            Niharika’s workspace<small>Personal workspace</small>
+            My workspace<small>Guest workspace</small>
           </div>
         </div>
         <div className="navlabel">WORKSPACE</div>
@@ -458,9 +458,9 @@ export default function Home() {
         </nav>
         <div className="sidebottom">
           <div className="profile">
-            <span>N</span>
+            <span>T</span>
             <div>
-              Niharika<small>QA workspace owner</small>
+              Guest<small>This browser</small>
             </div>
             <span className="online" />
           </div>
@@ -1514,7 +1514,7 @@ export default function Home() {
           )}
           <footer>
             <span>TestFlow · QA records</span>
-            <span>Single-user workspace</span>
+            <span>Guest workspace · export a backup before clearing cookies</span>
           </footer>
         </main>
       </div>

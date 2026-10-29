@@ -1,3 +1,4 @@
+import { getWorkspaceId } from "../../../lib/visitor-workspace";
 import { getDb } from "../../../db";
 import { workspace } from "../../../db/schema";
 import { eq } from "drizzle-orm";
@@ -10,7 +11,7 @@ export async function GET(request: Request) {
     const rows = await getDb()
       .select()
       .from(workspace)
-      .where(eq(workspace.id, "main"));
+      .where(eq(workspace.id, await getWorkspaceId()));
     const saved = rows[0]
       ? JSON.parse(rows[0].payload)
       : { defects: [], runs: [] };

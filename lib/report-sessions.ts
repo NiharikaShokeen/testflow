@@ -26,7 +26,7 @@ export function reportSessions(data: any): ReportSession[] {
           meta: {
             project: "Existing findings",
             website: "",
-            tester: "Niharika",
+            tester: "",
             environment: "",
             scope: "",
             ...data.report,

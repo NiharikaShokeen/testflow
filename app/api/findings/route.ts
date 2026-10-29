@@ -1,3 +1,4 @@
+import { getWorkspaceId } from "../../../lib/visitor-workspace";
 import { env } from "cloudflare:workers";
 export async function PATCH(request: Request) {
   try {
@@ -30,7 +31,7 @@ export async function PATCH(request: Request) {
     if (!env.DB) throw Error("Database unavailable");
     const result = await env.DB.prepare(
       `INSERT INTO workspace(id,payload)
-    VALUES('main',json_object('tests',json('[]'),'runs',json('[]'),'defects',json_array(json(?))))
+    VALUES(?,json_object('tests',json('[]'),'runs',json('[]'),'defects',json_array(json(?))))
     ON CONFLICT(id) DO UPDATE SET payload=json_set(workspace.payload,'$.defects',json(
       CASE WHEN EXISTS(SELECT 1 FROM json_each(COALESCE(json_extract(workspace.payload,'$.defects'),'[]')) WHERE json_extract(value,'$.id')=?)
       THEN (SELECT json_group_array(json(CASE WHEN json_extract(value,'$.id')=?
@@ -38,7 +39,7 @@ export async function PATCH(request: Request) {
           FROM json_each(COALESCE(json_extract(workspace.payload,'$.defects'),'[]')))
       ELSE json_insert(COALESCE(json_extract(workspace.payload,'$.defects'),'[]'),'$[#]',json(?)) END))`,
     )
-      .bind(encoded, finding.id, finding.id, encoded, encoded)
+      .bind(await getWorkspaceId(), encoded, finding.id, finding.id, encoded, encoded)
       .run();
     if (!result.success) throw Error("Save failed");
     return Response.json({ ok: true, savedAt: now });

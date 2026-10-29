@@ -1,3 +1,4 @@
+import { getWorkspaceId } from "../../../lib/visitor-workspace";
 import { getDb } from "../../../db";
 import { workspace } from "../../../db/schema";
 import { eq } from "drizzle-orm";
@@ -6,7 +7,7 @@ export async function GET() {
     const rows = await getDb()
       .select()
       .from(workspace)
-      .where(eq(workspace.id, "main"));
+      .where(eq(workspace.id, await getWorkspaceId()));
     return Response.json(rows[0] ? JSON.parse(rows[0].payload) : null);
   } catch {
     return Response.json(
@@ -46,7 +47,7 @@ export async function PUT(r: Request) {
     const rows = await db
       .select()
       .from(workspace)
-      .where(eq(workspace.id, "main"));
+      .where(eq(workspace.id, await getWorkspaceId()));
     const old = rows[0] ? JSON.parse(rows[0].payload) : {};
     const now = new Date().toISOString();
     if (body.reports === undefined && old.reports) body.reports = old.reports;
@@ -76,7 +77,7 @@ export async function PUT(r: Request) {
       );
     await db
       .insert(workspace)
-      .values({ id: "main", payload })
+      .values({ id: await getWorkspaceId(), payload })
       .onConflictDoUpdate({ target: workspace.id, set: { payload } });
     return Response.json({ ok: true });
   } catch {
