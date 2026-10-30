@@ -1,5 +1,7 @@
 # TestFlow
 
+Public application: https://testflow-qa.niharika-testflow.workers.dev
+
 A QA findings and reporting application built with React, TypeScript, Vinext and Cloudflare D1. Test a website manually, record reproducible issues, organise separate reviews, and export selected findings to editable Word reports or PDF summaries.
 
 ## Features
@@ -33,7 +35,7 @@ The standalone project targets Cloudflare Workers and can use a workers.dev addr
 
 1. Authenticate your hosting account with `npx wrangler login`.
 2. Create a database: `npx wrangler d1 create testflow-data`.
-3. Replace the placeholder database ID in `wrangler.jsonc` with the returned ID.
+3. Replace the deployment database ID in `wrangler.jsonc` with the ID from your own account.
 4. Apply the schema: `npm run db:migrate:remote`.
 5. Deploy: `npm run deploy`.
 6. Verify the returned URL and a new visitor's report workflow.
