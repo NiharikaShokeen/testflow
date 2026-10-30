@@ -65,7 +65,7 @@ This is anonymous guest separation, not verified account authentication. A diffe
 | db and drizzle | SQLite schema and migrations |
 | wrangler.jsonc | Worker and D1 configuration |
 
-[Read the complete project and viva guide](docs/PROJECT_GUIDE.md).
+<!--[Read the complete project and viva guide](docs/PROJECT_GUIDE.md).-->
 
 ## Report output and limits
 
